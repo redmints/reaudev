@@ -1,0 +1,90 @@
+{% extends 'ide/base.html' %}
+
+{% block content %}
+<div class="content">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 page-header">
+                <div class="page-pretitle">Home</div>
+                <h2 class="page-title">Projets</h2>
+            </div>
+        </div>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newProject">
+            Nouveau
+        </button>
+        <!-- Modal -->
+        <div class="modal fade" id="newProject" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Nouveau projet</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form action="create-project" method="post">
+                            <div class="mb-3 text-start">
+                                <label for="name" class="form-label">Nom</label>
+                                <input type="text" class="form-control" name="name" required>
+                            </div>
+                            <button class="btn btn-primary shadow-2 mb-4">Créer</button>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-sm-6 col-md-6 col-lg-3 mt-3">
+                <div class="card">
+                    <div class="content">
+                        <div class="row">
+                            <div class="col-sm-4">
+                                <div class="icon-big text-center">
+                                    <i class="teal fas fa-code"></i>
+                                </div>
+                            </div>
+                            <div class="col-sm-8">
+                                <div class="detail">
+                                    <p class="detail-subtitle">Python</p>
+                                    <span class="number"><a href="editor/1">Nom</a></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="footer">
+                            <hr />
+                            <div class="stats">
+                                <i class="fas fa-calendar"></i> Créé le 01/01/1970
+                            </div>
+                                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteProject1" style="float: right;">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                <!-- Modal -->
+                                <div class="modal fade" id="deleteProject1" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="exampleModalLabel">Supprimer le projet</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Êtes-vous sûr de vouloir supprimer le projet "Nom" et son contenu ? Cette action est irréversible.
+                                            </div>
+                                            <div class="modal-footer">
+                                                <a href="project/1/delete">
+                                                    <button type="button" class="btn btn-danger mb-2">Supprimer</button>
+                                                </a>
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
