@@ -1,0 +1,33 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title> WebSSH </title>
+    <link href="{% static 'ide/wssh/img/favicon.png' %}" rel="icon" type="image/png">
+    <link href="{% static 'ide/wssh/css/bootstrap.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link href="{% static 'ide/wssh/css/xterm.min.css' %}" rel="stylesheet" type="text/css"/>
+    <link href="{% static 'ide/wssh/css/fullscreen.min.css' %}" rel="stylesheet" type="text/css"/>
+    
+  </head>
+  <body>
+    <div class="container form-container" style="display: none">
+      <form id="connect" action="" method="post" enctype="multipart/form-data">
+        <input type="hidden" id="term" name="term" value="xterm-256color">
+      </form>
+    </div>
+
+    <div class="container">
+      <div id="status" style="color: red;"></div>
+      <div id="terminal"></div>
+    </div>
+
+    <script src="{% static 'ide/wssh/js/jquery.min.js' %}"></script>
+    <script src="{% static 'ide/wssh/js/popper.min.js' %}"></script>
+    <script src="{% static 'ide/wssh/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'ide/wssh/js/xterm.min.js' %}"></script>
+    <script src="{% static 'ide/wssh/js/xterm-addon-fit.min.js' %}"></script>
+    <script src="{% static 'ide/wssh/js/main.js' %}"></script>
+  </body>
+</html>

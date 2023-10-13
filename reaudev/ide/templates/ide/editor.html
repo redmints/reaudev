@@ -2,59 +2,130 @@
 
 {% load static %}
 {% block content %}
+    <link href="{% static 'ide/wssh/img/favicon.png' %}" rel="icon" type="image/png">
+    <link href="{% static 'ide/wssh/css/xterm.min.css' %}" rel="stylesheet" type="text/css"/>
     <link rel="stylesheet" href="{% static 'ide/lib/codemirror.css' %}">
+
     <script src="{% static 'ide/lib/codemirror.js' %}"></script>
     <script src="{% static 'ide/addon/edit/matchbrackets.js' %}"></script>
     <script src="{% static 'ide/python.js' %}"></script>
-    <style>.CodeMirror {border-top: 1px solid black; border-bottom: 1px solid black;}</style>
-            <div class="row">
-                <div class="col-md-12 page-header">
-                    <div class="page-pretitle">Éditeur</div>
-                    <h2 class="page-title">{{ project.name }}</h2>
+    <script src="{% static 'ide/assets/vendor/jquery/jquery.min.js' %}"></script>
+    <script src="{% static 'ide/wssh/js/popper.min.js' %}"></script>
+    <script src="{% static 'ide/wssh/js/xterm.min.js' %}"></script>
+    <script src="{% static 'ide/wssh/js/xterm-addon-fit.min.js' %}"></script>
+    <script src="{% static 'ide/wssh/js/main.js' %}"></script>
+
+    <section class="content">
+        <div class="row">
+            <div class="col-md-12 page-header">
+                <div class="page-pretitle">{{ project.name }}</div>
+            </div>
+        </div>
+        <input id="clickMe" type="button" value="Run" onclick="exec();" />
+        <div class="row">
+                    <div class="card-header p-0 border-bottom-0">
+                      <ul class="nav nav-tabs" id="custom-tabs-four-tab" role="tablist">
+                        {% for file in files %}
+                        <li class="nav-item">
+                          <a class="nav-link" id="tab-{{ file }}" onclick="openTab('{{ file }}')">{{ file }}</a>
+                        </li>
+                        {% endfor %}
+                      </ul>
+                    </div>
+                    <div class="card-body p-0">
+                      <div class="tab-content" id="custom-tabs-four-tabContent">
+                        {% for file in files %}
+                        <div class="tab-pane" id="{{ file }}" style="display: block">
+                            <textarea id="code-{{ file }}" name="code-{{ file }}"></textarea>
+                        </div>
+                        {% endfor %}
+                      </div>
+                    </div>
+                    <!-- /.card -->
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card card-outline card-info">
+                    <div class="card-body p-0">
+                        <div class="container form-container" style="display: none">
+                            <form id="connect" action="" method="post" enctype="multipart/form-data">
+                            <input type="hidden" id="term" name="term" value="xterm-256color">
+                            </form>
+                        </div>
+                        <div id="terminal"></div>
+                    </div>
                 </div>
             </div>
+        </div>
+    </section>
 
-            <div style="height: 80%">
-                <textarea id="code" name="code"></textarea>
-                <iframe width="100%" height="33%" allowfullscreen src="http://localhost:8080/?hostname=localhost&port=1222&username={{user.id}}&password={{user.password}}"></iframe>
-            </div>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            wssh.connect("localhost", "1222", "{{ user.id }}", "{{ user.password }}", "", "", "");
+            openTab(file);
+        });
+    </script>
+      
+    <script>
+        var files = httpGet("http://localhost:8000/ls?id_project={{ project.id }}");
+        files = files.split('\n');
+        files.pop();
 
+        var file = "";
+        if (files.length > 0) {
+            file = files[0];
+        }
 
-            <script>
-                var editor = CodeMirror.fromTextArea(document.getElementById("code"), {
-                    mode: {name: "python",
-                        version: 3,
-                        singleLineStringErrors: false},
-                    lineNumbers: true,
-                    indentUnit: 4,
-                    matchBrackets: true
-                });
-                editor.setSize("100%", "70%");
+        for (var i = 0; i < files.length; i++) {
+            var editor = CodeMirror.fromTextArea(document.getElementById("code-"+files[i]), {
+                mode: {name: "python",
+                    version: 3,
+                    singleLineStringErrors: false},
+                lineNumbers: true,
+                indentUnit: 4,
+                matchBrackets: true
+            });
 
-                var content = httpGet("http://localhost:8888/command/cat?path=/home/{{user.id}}/{{project.id}}/test.py");
-                document.getElementById("code").value = content;
+            var content = httpGet("http://localhost:8000/cat?id_project={{ project.id }}&file="+files[i]);
+            document.getElementById("code-"+files[i]).value = content;
+        }
 
-                var isCtrl = false;
-                document.onkeyup=function(e){
-                    if(e.keyCode == 17) isCtrl=false;
-                }
+        function httpGet(url) {
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.open( "GET", url, false );
+            xmlHttp.send( null );
+            return xmlHttp.responseText;
+        }
 
-                document.onkeydown=function(e){
-                    if(e.keyCode == 17) isCtrl=true;
-                    if(e.keyCode == 83 && isCtrl == true) {
-                        httpGet("http://localhost:8888/command/write?path=/home/{{user.id}}/{{project.id}}/test.py&fileContent="+editor.getValue());
-                        return false;
-                    }
-                }
+        function openTab(tabId) {
+            file = tabId;
+            // Declare all variables
+            var i, tabcontent, tablinks;
 
-                function httpGet(url) {
-                    console.log(url);
-                    var xmlHttp = new XMLHttpRequest();
-                    xmlHttp.open( "GET", url, false );
-                    xmlHttp.send( null );
-                    return xmlHttp.responseText;
-                }
-            </script>
+            // Get all elements with class="tabcontent" and hide them
+            tabcontent = document.getElementsByClassName("tab-pane");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+
+            // Get all elements with class="tablinks" and remove the class "active"
+            tablinks = document.getElementsByClassName("nav-link");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+
+            // Show the current tab, and add an "active" class to the button that opened the tab
+            console.log(tabId)
+            document.getElementById(tabId).style.display = "block";
+            //evt.currentTarget.className += " active";
+            document.getElementById("tab-"+tabId).className += " active";
+        }
+
+        function exec() {
+            wssh.send('python3 /home/{{ user.id }}/{{ project.id }}/'+file);
+        }
+    </script>
+
 
 
 {% endblock %}

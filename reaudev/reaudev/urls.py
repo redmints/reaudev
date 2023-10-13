@@ -25,4 +25,6 @@ urlpatterns = [
     path('login/', views.login),
     path('create-project/', views.create_project),
     path('editor/', views.editor),
+    path('cat/', views.cat),
+    path('ls/', views.ls),
 ]
