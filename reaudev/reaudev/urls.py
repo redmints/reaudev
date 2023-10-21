@@ -27,4 +27,6 @@ urlpatterns = [
     path('editor/', views.editor),
     path('cat/', views.cat),
     path('ls/', views.ls),
+    path('touch/', views.touch),
+    path('writefile/', views.write_file),
 ]

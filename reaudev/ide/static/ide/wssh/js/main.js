@@ -42,8 +42,6 @@ jQuery(function($){
       waiter = $('#waiter'),
       term_type = $('#term'),
       style = {},
-      default_title = 'WebSSH',
-      title_element = document.querySelector('title'),
       form_id = '#connect',
       debug = document.querySelector(form_id).noValidate,
       custom_font = document.fonts ? document.fonts.values().next().value : undefined,
@@ -514,6 +512,7 @@ jQuery(function($){
     };
 
     term.on_resize = function(cols, rows) {
+      rows = 15;
       if (cols !== this.cols || rows !== this.rows) {
         console.log('Resizing terminal to geometry: ' + format_geometry(cols, rows));
         this.resize(cols, rows);
@@ -532,7 +531,6 @@ jQuery(function($){
       update_font_family(term);
       term.focus();
       state = CONNECTED;
-      title_element.text = url_opts_data.title || default_title;
       if (url_opts_data.command) {
         setTimeout(function () {
           sock.send(JSON.stringify({'data': url_opts_data.command+'\r'}));
@@ -555,8 +553,6 @@ jQuery(function($){
       reset_wssh();
       log_status(e.reason, true);
       state = DISCONNECTED;
-      default_title = 'WebSSH';
-      title_element.text = default_title;
     };
 
     $(window).resize(function(){
@@ -605,8 +601,7 @@ jQuery(function($){
         pk = data.get('privatekey'),
         result = {
           valid: false,
-          data: data,
-          title: ''
+          data: data
         },
         errors = [], size;
 
@@ -639,7 +634,6 @@ jQuery(function($){
 
     if (!errors.length || debug) {
       result.valid = true;
-      result.title = username + '@' + hostname + ':'  + port;
     }
     result.errors = errors;
 
@@ -780,7 +774,6 @@ jQuery(function($){
 
     if (result) {
       state = CONNECTING;
-      default_title = result.title;
       if (hostname) {
         validated_form_data = result.data;
       }

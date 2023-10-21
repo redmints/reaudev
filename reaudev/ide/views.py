@@ -6,6 +6,8 @@ from ide.models import Project
 from ide.models import User_Project
 from ide.utils import *
 import base64
+import hashlib
+import json
 
 # Create your views here.
 
@@ -24,6 +26,16 @@ def cat(request):
 def ls(request):
     content = str(docker_ls('/home/'+str(request.session.get('id_user'))+'/'+str(request.GET['id_project']))[1], "utf-8")
     return HttpResponse(content)
+
+def touch(request):
+    content = str(docker_touch('/tmp/reaudev/'+str(request.session.get('id_user'))+'/'+str(request.GET['id_project'])+'/'+str(request.GET['filename']))[1], "utf-8")
+    return HttpResponse(content)
+
+def write_file(request):
+    if request.method == "POST":
+        json_data = json.loads(request.body)
+        docker_write_file('/tmp/reaudev/'+str(request.session.get('id_user'))+'/'+str(json_data['id_project'])+'/'+str(json_data['filename']), json_data['content'])
+    return HttpResponse("OK")
     
 def editor(request):
     if request.session.get('id_user') and request.method == "GET":
@@ -58,7 +70,7 @@ def signup(request):
         if not User.objects.filter(email=form['email']):
             user.username = form['name']
             user.email = form['email']
-            user.password = form['password']
+            user.password = hashlib.sha256(form['password'].encode('utf-8')).hexdigest()
             user.type = 0
             user.save()
             print(docker_create_user(user.id, user.password))
@@ -76,7 +88,7 @@ def login(request):
         user = User.objects.filter(email=form['email'])[0]
         if not user:
             return redirect("/signup")
-        if user.password == form['password']:
+        if user.password == hashlib.sha256(form['password'].encode('utf-8')).hexdigest():
             request.session['id_user'] = user.id
             return redirect("/")
         else:
