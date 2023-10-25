@@ -29,4 +29,7 @@ urlpatterns = [
     path('ls/', views.ls),
     path('touch/', views.touch),
     path('writefile/', views.write_file),
+    path('project-settings/', views.project_settings),
+    path('search-user/', views.search_user),
+    path('change-user/', views.change_user),
 ]

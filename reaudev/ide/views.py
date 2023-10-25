@@ -14,7 +14,7 @@ import json
 def home(request):
     if request.session.get('id_user'):
         user = User.objects.filter(id=request.session.get('id_user'))[0]
-        projects = get_projects(user.id)
+        projects = User_Project.objects.filter(user=user)
         return render(request, 'ide/home.html', {'user': user, 'projects': projects})
     else:
         return redirect("/login")
@@ -28,13 +28,51 @@ def ls(request):
     return HttpResponse(content)
 
 def touch(request):
-    content = str(docker_touch('/tmp/reaudev/'+str(request.session.get('id_user'))+'/'+str(request.GET['id_project'])+'/'+str(request.GET['filename']))[1], "utf-8")
-    return HttpResponse(content)
+    docker_touch('/tmp/reaudev/'+str(request.session.get('id_user'))+'/'+str(request.GET['id_project'])+'/'+str(request.GET['filename']))
+    return HttpResponse("OK")
 
 def write_file(request):
     if request.method == "POST":
         json_data = json.loads(request.body)
         docker_write_file('/tmp/reaudev/'+str(request.session.get('id_user'))+'/'+str(json_data['id_project'])+'/'+str(json_data['filename']), json_data['content'])
+    return HttpResponse("OK")
+
+def search_user(request):
+    if 'q' in request.GET and len(request.GET['q']) >= 2:
+        id_in_project = User_Project.objects.filter(project__id=request.GET['id_project']).values('user__id')
+        users = User.objects.filter(username__icontains=request.GET['q']).exclude(id__in=id_in_project) | User.objects.filter(email__icontains=request.GET['q']).exclude(id__in=id_in_project)
+        tab = []
+        for user in users:
+            dict = {}
+            dict['id'] = user.id
+            dict['text'] = user.username+' ('+user.email+')'
+            tab.append(dict)
+        return HttpResponse(json.dumps(tab))
+    return HttpResponse("OK")
+
+def project_settings(request):
+    if request.session.get('id_user'):
+        if request.method == "POST":
+            if request.POST['user_id']:
+                if not User_Project.objects.filter(user__id=request.POST['user_id'], project__id=request.GET['id']):
+                    up = User_Project()
+                    up.project = Project.objects.filter(id=request.GET['id'])[0]
+                    up.user = User.objects.filter(id=request.POST['user_id'])[0]
+                    up.role = request.POST['user_role']
+                    up.save()
+        user = User.objects.filter(id=request.session.get('id_user'))[0]
+        project = Project.objects.filter(id=request.GET['id'])[0]
+        users = User_Project.objects.filter(project=project)
+        return render(request, 'ide/project-settings.html', {'user': user, 'project': project, 'users': users})
+    return redirect("/login")
+
+def change_user(request):
+    if request.session.get('id_user'):
+        if request.GET['action'] == "change":
+            User_Project.objects.filter(user__id=request.GET["id_user"], project__id=request.GET["id_project"]).update(role=request.GET['role'])
+        if request.GET['action'] == "delete":
+            User_Project.objects.filter(user__id=request.GET["id_user"], project__id=request.GET["id_project"]).delete()
+            return redirect("/project-settings/?id="+request.GET["id_project"])
     return HttpResponse("OK")
     
 def editor(request):
@@ -42,7 +80,6 @@ def editor(request):
         user = User.objects.filter(id=request.session.get('id_user'))[0]
         user.password_b64 = str(base64.b64encode(user.password.encode('ascii')), "utf-8")
         project = Project.objects.filter(id=request.GET['id'])[0]
-        project.owner = User.objects.filter(id=User_Project.objects.filter(id_project=project.id, role=1)[0].id_user)[0]
         files = str(docker_ls('/home/'+str(request.session.get('id_user'))+'/'+str(project.id))[1], "utf-8").split('\n')
         files.pop(len(files)-1)
         print(files)
@@ -56,8 +93,8 @@ def create_project(request):
         project.status = 1
         project.save()
         user_project = User_Project()
-        user_project.id_user = request.session.get('id_user')
-        user_project.id_project = project.id
+        user_project.user = User.objects.filter(id=request.session.get('id_user'))[0]
+        user_project.project = project
         user_project.role = 1
         user_project.save()
         print(docker_create_project(request.session.get('id_user'), project.id))

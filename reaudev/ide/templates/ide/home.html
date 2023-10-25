@@ -5,7 +5,6 @@
     <div class="container">
         <div class="row">
             <div class="col-md-12 page-header">
-                <div class="page-pretitle">Home</div>
                 <h2 class="page-title">Projets</h2>
             </div>
         </div>
@@ -32,7 +31,7 @@
                         </form>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
                     </div>
                 </div>
             </div>
@@ -50,20 +49,47 @@
                             </div>
                             <div class="col-sm-8">
                                 <div class="detail">
-                                    <p class="detail-subtitle">Python</p>
-                                    <span class="number"><a href="editor?id={{project.id}}">{{ project.name }}</a></span>
+                                    <span class="number"><a href="editor?id={{project.project.id}}">{{ project.project.name }}</a></span>
                                 </div>
                             </div>
                         </div>
                         <div class="footer">
                             <hr />
                             <div class="stats">
-                                <i class="fas fa-user"></i> {{ project.owner.username }}
+                                <i class="fas fa-user"></i> {{ project.project.owner.username }}
+                                {% if user.id == project.project.owner.id %}
+                                <a class="btn btn-app" data-bs-toggle="modal" data-bs-target="#deleteProject{{ project.project.id }}">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                                <a class="btn btn-app" href="/project-settings?id={{ project.project.id }}">
+                                    <i class="fas fa-cog"></i>
+                                </a>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+            <div class="modal fade" id="deleteProject{{ project.project.id }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">Supprimer le projet</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            Êtes-vous sûr de vouloir supprimer le projet {{ project.project.name }} et son contenu ? Cette action est irréversible.
+                        </div>
+                        <div class="modal-footer">
+                            <a href="project/1/delete">
+                                <button type="button" class="btn btn-danger mb-2">Supprimer</button>
+                            </a>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             {% endfor %} 
         </div>
     </div>

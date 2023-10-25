@@ -13,7 +13,13 @@ class Project(models.Model):
     type = models.fields.IntegerField()
     status = models.fields.IntegerField()
 
+    def _get_owner(self):
+        for up in User_Project.objects.filter(project=self):
+            if up.role == 1:
+                return up.user
+    owner = property(_get_owner)
+
 class User_Project(models.Model):
-    id_user = models.fields.IntegerField()
-    id_project = models.fields.IntegerField()
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, default=1)
     role = models.fields.IntegerField()

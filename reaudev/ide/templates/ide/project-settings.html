@@ -1,0 +1,170 @@
+{% extends 'ide/base.html' %}
+
+{% load static %}
+{% block content %}
+<link href="{% static 'ide/select2/select2.min.css' %}" rel="stylesheet" />
+
+<div class="content">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 page-header">
+                <div class="page-pretitle">Paramètres</div>
+                <h2 class="page-title">{{ project.name }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+      <div class="row">
+        <!-- left column -->
+        <div class="col-md-6">
+          <!-- general form elements -->
+          <div class="card card-primary">
+            <!-- /.card-header -->
+            <!-- form start -->
+            <form action="" method="POST">
+              {% csrf_token %}
+              {{ form }}
+              <div class="card-body">
+                <div class="form-group">
+                  <label for="exampleInputEmail1">Nom</label>
+                  <input type="text" class="form-control" id="exampleInputEmail1" placeholder="Nom du projet" name="project_name" value="{{ project.name }}">
+                </div>
+              </div>
+              <!-- /.card-body -->
+
+              <div class="card-footer">
+                <button type="submit" class="btn btn-primary">Sauvegarder</button>
+              </div>
+            </form>
+          </div>
+         </div>
+         <div class="col-md-6">
+            <!-- Form Element sizes -->
+            <div class="card card-success">
+              <form action="" method="POST">
+                {% csrf_token %}
+                {{ form }}
+                <div class="card-body">
+                  <div class="form-group">
+                    <label for="user_id">Ajouter un utilisateur</label>
+                    <select class="form-control" id="user_id" name="user_id" required>
+                      <option selected="selected"></option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="user_role">Rôle</label>
+                    <select class="form-control" id="user_role" name="user_role">
+                      <option selected="selected" value="2">Apprenant - Sans lecture</option>
+                      <option value="3">Apprenant - Avec lecture</option>
+                      <option value="4">Collaborateur</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="card-footer">
+                  <button type="submit" class="btn btn-primary">Ajouter</button>
+                </div>
+              </form>
+              <div class="card-body p-0">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Nom</th>
+                      <th>Email</th>
+                      <th>Rôle</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for user in users %}
+                    <tr>
+                      <td>{{ user.user.username }}</td>
+                      <td>{{ user.user.email }}</td>
+                      <td>
+                        {% if project.owner.id == user.id %}
+                          Propriétaire
+                        {% else %}
+                        <select class="form-control" id="user_role" name="user_role" onchange="changeRole(this, {{ user.user.id }})">
+                          <option {% if user.role == 2%} selected="selected" {% endif %} value="2">Apprenant - Sans lecture</option>
+                          <option {% if user.role == 3%} selected="selected" {% endif %} value="3">Apprenant - Avec lecture</option>
+                          <option {% if user.role == 4%} selected="selected" {% endif %} value="4">Collaborateur</option>
+                        </select>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% if project.owner.id != user.id %}
+                        <a class="btn btn-app" data-bs-toggle="modal" data-bs-target="#deleteUser{{ user.user.id }}">
+                          <i class="fas fa-trash"></i>
+                        </a>
+                        {% else %}
+                          ---
+                        {% endif %}
+                      </td>
+                    </tr>
+                    <div class="modal fade" id="deleteUser{{ user.user.id }}" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                      <div class="modal-dialog">
+                          <div class="modal-content">
+                              <div class="modal-header">
+                                  <h5 class="modal-title" id="exampleModalLabel">Supprimer l'utilisateur</h5>
+                                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                              </div>
+                              <div class="modal-body">
+                                  Êtes-vous sûr de vouloir supprimer les droits de {{ user.user.username }} sur le projet ? Cette action est irréversible et entrainera la suppression définitive de ses travaux.
+                              </div>
+                              <div class="modal-footer">
+                                  <a href="/change-user/?action=delete&id_user={{ user.user.id }}&id_project={{ project.id }}">
+                                      <button type="button" class="btn btn-danger mb-2">Supprimer</button>
+                                  </a>
+                                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              <!-- /.card-body -->
+            </div>
+        </div>
+      </div>
+    </div>
+</section>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script type="text/javascript" src="{% static 'ide/select2/select2.min.js' %}"></script>
+<script type="text/javascript" src="{% static 'ide/select2/fr.js' %}"></script>
+<script type="text/javascript">
+    $(function () {
+      $("#user_id").select2({
+        language: "fr",
+        allowClear: true,
+        placeholder: 'Utilisateur',
+        ajax: {
+          url: "/search-user?id_project={{ project.id }}",
+          dataType: "json",
+          processResults: function (data) {
+            return {
+              results: data
+            };
+          }
+        }
+      });
+    });
+  </script>
+  <script>
+    function httpGet(url) {
+        var xmlHttp = new XMLHttpRequest();
+        xmlHttp.open( "GET", url, false );
+        xmlHttp.send( null );
+        return xmlHttp.responseText;
+    }
+
+    function changeRole(el, user) {
+      console.log(el.value);
+      httpGet("http://localhost:8000/change-user/?action=change&id_user="+user+"&id_project={{ project.id }}&role="+el.value)
+    }
+  </script>
+          <!-- /.card -->
+{% endblock %}
