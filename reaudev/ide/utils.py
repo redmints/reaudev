@@ -20,9 +20,6 @@ def docker_create_project(id_user, id_project):
 def docker_cat(path):
       return docker_exec('0581dd23c4f3', 'cat '+str(path))
 
-def docker_rm(path):
-      os.remove(path)
-
 def docker_ls(path):
       return docker_exec('0581dd23c4f3', 'ls '+str(path))
 

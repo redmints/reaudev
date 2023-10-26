@@ -9,6 +9,7 @@ import base64
 import hashlib
 import json
 import shutil
+import os
 
 # Create your views here.
 
@@ -21,25 +22,55 @@ def home(request):
         return redirect("/login")
     
 def cat(request):
-    content = str(docker_cat('/home/'+str(request.session.get('id_user'))+'/'+str(request.GET['id_project'])+'/'+str(request.GET['file']))[1], "utf-8")
+    user = User.objects.filter(id=request.session.get('id_user'))[0]
+    project = Project.objects.filter(id=request.GET['id_project'])[0]
+    cmd = '/home/'+str(request.session.get('id_user'))+'/'+str(request.GET['id_project'])+'/'+str(request.GET['file'])
+    if "id_user" in request.GET:
+        if user._get_role(project) in [1, 3]:
+            cmd = '/home/'+str(request.GET['id_user'])+'/'+str(request.GET['id_project'])+'/'+str(request.GET['file'])
+    content = str(docker_cat(cmd)[1], "utf-8")
     return HttpResponse(content)
 
 def rm(request):
-    docker_rm('/tmp/reaudev/'+str(request.session.get('id_user'))+'/'+str(request.GET['id_project'])+'/'+str(request.GET['filename']))
+    user = User.objects.filter(id=request.session.get('id_user'))[0]
+    project = Project.objects.filter(id=request.GET['id_project'])[0]
+    cmd = '/tmp/reaudev/'+str(request.session.get('id_user'))+'/'+str(request.GET['id_project'])+'/'+str(request.GET['filename'])
+    if "id_user" in request.GET:
+        if user._get_role(project) == 1:
+            cmd = '/tmp/reaudev/'+str(request.GET['id_user'])+'/'+str(request.GET['id_project'])+'/'+str(request.GET['filename'])
+    os.remove(cmd)
     return HttpResponse("OK")
 
 def ls(request):
-    content = str(docker_ls('/home/'+str(request.session.get('id_user'))+'/'+str(request.GET['id_project']))[1], "utf-8")
+    user = User.objects.filter(id=request.session.get('id_user'))[0]
+    project = Project.objects.filter(id=request.GET['id_project'])[0]
+    cmd = '/home/'+str(request.session.get('id_user'))+'/'+str(request.GET['id_project'])
+    if "id_user" in request.GET:
+        if user._get_role(project) in [1, 3]:
+            cmd = '/home/'+str(request.GET['id_user'])+'/'+str(request.GET['id_project'])
+    content = str(docker_ls(cmd)[1], "utf-8")
     return HttpResponse(content)
 
 def touch(request):
-    docker_touch('/tmp/reaudev/'+str(request.session.get('id_user'))+'/'+str(request.GET['id_project'])+'/'+str(request.GET['filename']))
+    user = User.objects.filter(id=request.session.get('id_user'))[0]
+    project = Project.objects.filter(id=request.GET['id_project'])[0]
+    cmd = '/tmp/reaudev/'+str(request.session.get('id_user'))+'/'+str(request.GET['id_project'])+'/'+str(request.GET['filename'])
+    if "id_user" in request.GET:
+        if user._get_role(project) == 1:
+            cmd = '/tmp/reaudev/'+str(request.GET['id_user'])+'/'+str(request.GET['id_project'])+'/'+str(request.GET['filename'])
+    docker_touch(cmd)
     return HttpResponse("OK")
 
 def write_file(request):
     if request.method == "POST":
         json_data = json.loads(request.body)
-        docker_write_file('/tmp/reaudev/'+str(request.session.get('id_user'))+'/'+str(json_data['id_project'])+'/'+str(json_data['filename']), json_data['content'])
+        user = User.objects.filter(id=request.session.get('id_user'))[0]
+        project = Project.objects.filter(id=json_data['id_project'])[0]
+        cmd = '/tmp/reaudev/'+str(request.session.get('id_user'))+'/'+str(json_data['id_project'])+'/'+str(json_data['filename'])
+        if "id_user" in json_data:
+            if user._get_role(project) == 1:
+                cmd = '/tmp/reaudev/'+str(json_data['id_user'])+'/'+str(json_data['id_project'])+'/'+str(json_data['filename'])
+        docker_write_file(cmd, json_data['content'])
     return HttpResponse("OK")
 
 def search_user(request):
@@ -87,15 +118,22 @@ def change_user(request):
 def editor(request):
     if request.session.get('id_user') and request.method == "GET":
         user = User.objects.filter(id=request.session.get('id_user'))[0]
-        project = Project.objects.filter(id=request.GET['id'])[0]
+        project = Project.objects.filter(id=request.GET['id_project'])[0]
         up = None
+        user_to_see = None
         if user._get_role(project):
+            files = str(docker_ls('/home/'+str(request.session.get('id_user'))+'/'+str(project.id))[1], "utf-8").split('\n')
             if user._get_role(project) == 1:
                 up = User_Project.objects.filter(project=project, role__in=[2, 3])
+            if "id_user" in request.GET:
+                if user._get_role(project) in [1, 4]:
+                    user_to_see = User.objects.filter(id=request.GET['id_user'])[0]
+                if user._get_role(project) == 3:
+                    user_to_see = project.owner
+                files = str(docker_ls('/home/'+str(user_to_see.id)+'/'+str(project.id))[1], "utf-8").split('\n')
             user.password_b64 = str(base64.b64encode(user.password.encode('ascii')), "utf-8")
-            files = str(docker_ls('/home/'+str(request.session.get('id_user'))+'/'+str(project.id))[1], "utf-8").split('\n')
             files.pop(len(files)-1)
-            return render(request, 'ide/editor.html', {'user': user, 'project': project, 'files': files, 'role': user._get_role(project), 'users': up})
+            return render(request, 'ide/editor.html', {'user': user, 'project': project, 'files': files, 'role': user._get_role(project), 'users': up, 'user_to_see': user_to_see})
     return redirect("/login")
     
 def create_project(request):

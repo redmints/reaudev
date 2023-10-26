@@ -18,8 +18,13 @@
         <div class="row">
             <div class="col-md-12 page-header">
                 <div class="page-pretitle">{{ project.name }} ({{ project.owner.username }})</div>
+                {% if user_to_see != None %}
+                <div class="page-pretitle">Espace de travail externe en cours : {{ user_to_see.username }} ({{ user_to_see.email }})</div>
+                {% endif %}
             </div>
         </div>
+        {% if user_to_see != None and role == 3 %}
+        {% else %}
         <strong>Nouveau fichier</strong>
         <div class="col-3">
             <div class="input-group mb-3">
@@ -29,18 +34,27 @@
                 </span>
             </div>
         </div>
+        {% endif %}
         <a class="btn btn-app" onclick="exec();">
             <i class="fas fa-play"></i>
         </a>
+        {% if user_to_see == None or role == 1 or role == 4 %}
         <a class="btn btn-app" onclick="deleteFile();">
             <i class="fas fa-trash"></i>
         </a>
+        {% endif %}
         {% if role == 3 %}
-        <a class="btn btn-app">
+        <a class="btn btn-app" href="/editor?id_project={{project.id}}">
+            <i class="fas fa-home"></i>
+        </a>
+        <a class="btn btn-app" href="/editor?id_user={{ user_to_see.id }}&id_project={{project.id}}">
             <i class="fas fa-eye"></i>
         </a>
         {% endif %}
         {% if role == 1 and users|length > 0 %}
+        <a class="btn btn-app" href="/editor?id_project={{project.id}}">
+            <i class="fas fa-home"></i>
+        </a>
         <div class="nav-dropdown">
             <a href="#" class="nav-item nav-link dropdown-toggle text-secondary" data-bs-toggle="dropdown" aria-expanded="false">
                 <i class="fas fa-eye"></i>
@@ -48,7 +62,7 @@
             <div class="dropdown-menu nav-link-menu">
                 <ul class="nav-list">
                     {% for up in users %}
-                    <li><a href="" class="dropdown-item"> {{ up.user.username }}</a></li>
+                    <li><a href="/editor?id_project={{project.id}}&id_user={{ up.user.id }}" class="dropdown-item"> {{ up.user.username }} ({{ up.user.email }})</a></li>
                     {% endfor %}
                 </ul>
             </div>
@@ -123,7 +137,12 @@
                         body: JSON.stringify({
                             id_project: {{ project.id }},
                             filename: file,
-                            content: editors[file].getValue()
+                            content: editors[file].getValue(),
+                            {% if user_to_see != None %}
+                            {% if role == 1 or role == 4 %}
+                            id_user: {{ user_to_see.id }},
+                            {% endif %}
+                            {% endif %}
                         }),
                         headers: {
                             "Content-type": "application/json; charset=UTF-8",
@@ -135,10 +154,13 @@
     </script>
       
     <script>
+        {% if user_to_see != None %}
+        var files = httpGet("http://localhost:8000/ls?id_user={{ user_to_see.id }}&id_project={{ project.id }}");
+        {% else %}
         var files = httpGet("http://localhost:8000/ls?id_project={{ project.id }}");
+        {% endif %}
         files = files.split('\n');
         files.pop();
-
         var editors = {}
         var opened_tabs = [];
 
@@ -146,6 +168,8 @@
         if (files.length > 0) {
             file = files[0];
         }
+
+        console.log(file);
 
         for (var i = 0; i < files.length; i++) {
             var editor = CodeMirror.fromTextArea(document.getElementById("code-"+files[i]), {
@@ -188,17 +212,29 @@
             document.getElementById(tabId).style.display = "block";
             document.getElementById("tab-"+tabId).className += " active";
             if (!opened_tabs.includes(file)) {
+                {% if user_to_see != None %}
+                editors[file].getDoc().setValue(httpGet("http://localhost:8000/cat?id_user={{ user_to_see.id }}&id_project={{ project.id }}&file="+file));
+                {% else %}
                 editors[file].getDoc().setValue(httpGet("http://localhost:8000/cat?id_project={{ project.id }}&file="+file));
+                {% endif %}
                 opened_tabs.push(file);
             }
         }
 
         function exec() {
+            {% if user_to_see != None %}
+            wssh.send('python3 /home/{{ user_to_see.id }}/{{ project.id }}/'+file);
+            {% else %}
             wssh.send('python3 /home/{{ user.id }}/{{ project.id }}/'+file);
+            {% endif %}
         }
 
         function move() {
+            {% if user_to_see != None %}
+            wssh.send('cd /home/{{ user_to_see.id }}/{{ project.id }}');
+            {% else %}
             wssh.send('cd /home/{{ user.id }}/{{ project.id }}');
+            {% endif %}
         }
 
         function deleteFile() {
@@ -208,7 +244,13 @@
             contentToDelete.remove();
             for (var first in editors) {
                 delete editors[first];
+                {% if user_to_see != None %}
+                {% if role == 1 or role == 4 %}
+                httpGet("http://localhost:8000/rm?id_user={{ user_to_see.id }}&id_project={{ project.id }}&filename="+first);
+                {% endif %}
+                {% else %}
                 httpGet("http://localhost:8000/rm?id_project={{ project.id }}&filename="+first);
+                {% endif %}
                 break;
             }
             for (var first in editors) {
@@ -222,7 +264,13 @@
             var file_value = add_field.value;
             if (file_value != "" && !(file_value in editors)) {
                 add_field.value = "";
+                {% if user_to_see != None %}
+                {% if role == 1 or role == 4 %}
+                httpGet("http://localhost:8000/touch?id_user={{ user_to_see.id }}&id_project={{ project.id }}&filename="+file_value);
+                {% endif %}
+                {% else %}
                 httpGet("http://localhost:8000/touch?id_project={{ project.id }}&filename="+file_value);
+                {% endif %}
                 document.getElementById("custom-tabs-four-tab").innerHTML += '<li class="nav-item"><a class="nav-link" id="tab-'+file_value+'" onclick="openTab(\''+file_value+'\')">'+file_value+'</a></li>';
                 document.getElementById("custom-tabs-four-tabContent").innerHTML += '<div class="tab-pane" id="'+file_value+'" style="display: block"><textarea id="code-'+file_value+'" name="code-'+file_value+'"></textarea></div>';
                 var editor = CodeMirror.fromTextArea(document.getElementById("code-"+file_value), {
