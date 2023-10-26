@@ -8,6 +8,7 @@ from ide.utils import *
 import base64
 import hashlib
 import json
+import shutil
 
 # Create your views here.
 
@@ -22,6 +23,10 @@ def home(request):
 def cat(request):
     content = str(docker_cat('/home/'+str(request.session.get('id_user'))+'/'+str(request.GET['id_project'])+'/'+str(request.GET['file']))[1], "utf-8")
     return HttpResponse(content)
+
+def rm(request):
+    docker_rm('/tmp/reaudev/'+str(request.session.get('id_user'))+'/'+str(request.GET['id_project'])+'/'+str(request.GET['filename']))
+    return HttpResponse("OK")
 
 def ls(request):
     content = str(docker_ls('/home/'+str(request.session.get('id_user'))+'/'+str(request.GET['id_project']))[1], "utf-8")
@@ -52,38 +57,46 @@ def search_user(request):
 
 def project_settings(request):
     if request.session.get('id_user'):
-        if request.method == "POST":
-            if request.POST['user_id']:
-                if not User_Project.objects.filter(user__id=request.POST['user_id'], project__id=request.GET['id']):
-                    up = User_Project()
-                    up.project = Project.objects.filter(id=request.GET['id'])[0]
-                    up.user = User.objects.filter(id=request.POST['user_id'])[0]
-                    up.role = request.POST['user_role']
-                    up.save()
         user = User.objects.filter(id=request.session.get('id_user'))[0]
         project = Project.objects.filter(id=request.GET['id'])[0]
-        users = User_Project.objects.filter(project=project)
-        return render(request, 'ide/project-settings.html', {'user': user, 'project': project, 'users': users})
+        if user._get_role(project) == 1:
+            if request.method == "POST":
+                if request.POST['user_id']:
+                    if not User_Project.objects.filter(user__id=request.POST['user_id'], project__id=request.GET['id']):
+                        up = User_Project()
+                        up.project = project
+                        up.user = User.objects.filter(id=request.POST['user_id'])[0]
+                        up.role = request.POST['user_role']
+                        up.save()
+                        docker_create_project(up.user.id, project.id)
+            users = User_Project.objects.filter(project=project)
+            return render(request, 'ide/project-settings.html', {'user': user, 'project': project, 'users': users})
     return redirect("/login")
 
 def change_user(request):
     if request.session.get('id_user'):
-        if request.GET['action'] == "change":
-            User_Project.objects.filter(user__id=request.GET["id_user"], project__id=request.GET["id_project"]).update(role=request.GET['role'])
-        if request.GET['action'] == "delete":
-            User_Project.objects.filter(user__id=request.GET["id_user"], project__id=request.GET["id_project"]).delete()
-            return redirect("/project-settings/?id="+request.GET["id_project"])
+        if User.objects.filter(id=request.session.get('id_user'))[0]._get_role(Project.objects.filter(id=request.GET["id_project"])[0]) == 1:
+            if request.GET['action'] == "change":
+                User_Project.objects.filter(user__id=request.GET["id_user"], project__id=request.GET["id_project"]).update(role=request.GET['role'])
+            if request.GET['action'] == "delete":
+                User_Project.objects.filter(user__id=request.GET["id_user"], project__id=request.GET["id_project"]).delete()
+                shutil.rmtree("/tmp/reaudev/"+str(request.GET["id_user"])+"/"+str(request.GET["id_project"]))
+                return redirect("/project-settings/?id="+request.GET["id_project"])
     return HttpResponse("OK")
     
 def editor(request):
     if request.session.get('id_user') and request.method == "GET":
         user = User.objects.filter(id=request.session.get('id_user'))[0]
-        user.password_b64 = str(base64.b64encode(user.password.encode('ascii')), "utf-8")
         project = Project.objects.filter(id=request.GET['id'])[0]
-        files = str(docker_ls('/home/'+str(request.session.get('id_user'))+'/'+str(project.id))[1], "utf-8").split('\n')
-        files.pop(len(files)-1)
-        print(files)
-        return render(request, 'ide/editor.html', {'user': user, 'project': project, 'files': files})
+        up = None
+        if user._get_role(project):
+            if user._get_role(project) == 1:
+                up = User_Project.objects.filter(project=project, role__in=[2, 3])
+            user.password_b64 = str(base64.b64encode(user.password.encode('ascii')), "utf-8")
+            files = str(docker_ls('/home/'+str(request.session.get('id_user'))+'/'+str(project.id))[1], "utf-8").split('\n')
+            files.pop(len(files)-1)
+            return render(request, 'ide/editor.html', {'user': user, 'project': project, 'files': files, 'role': user._get_role(project), 'users': up})
+    return redirect("/login")
     
 def create_project(request):
     if request.session.get('id_user') and request.method == "POST":
@@ -97,8 +110,17 @@ def create_project(request):
         user_project.project = project
         user_project.role = 1
         user_project.save()
-        print(docker_create_project(request.session.get('id_user'), project.id))
+        docker_create_project(request.session.get('id_user'), project.id)
     return redirect("/")
+
+def delete_project(request):
+    if request.session.get('id_user') and request.method == "GET":
+        user = User.objects.filter(id=request.session.get('id_user'))[0]
+        project = Project.objects.filter(id=request.GET['id_project'])[0]
+        if user._get_role(project) == 1:
+            shutil.rmtree("/tmp/reaudev/"+str(user.id)+"/"+str(project.id))
+            project.delete()
+        return redirect("/")
 
 def signup(request):
     if request.method == "POST":

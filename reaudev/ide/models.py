@@ -8,6 +8,13 @@ class User(models.Model):
     password = models.fields.CharField(max_length=100)
     type = models.fields.IntegerField()
 
+    def _get_role(self, project):
+        up = User_Project.objects.filter(user=self, project=project)
+        if len(up) > 0:
+            return up[0].role
+        else:
+            return None
+
 class Project(models.Model):
     name = models.fields.CharField(max_length=100)
     type = models.fields.IntegerField()

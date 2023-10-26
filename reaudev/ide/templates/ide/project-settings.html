@@ -83,7 +83,7 @@
                       <td>{{ user.user.username }}</td>
                       <td>{{ user.user.email }}</td>
                       <td>
-                        {% if project.owner.id == user.id %}
+                        {% if project.owner.id == user.user.id %}
                           Propriétaire
                         {% else %}
                         <select class="form-control" id="user_role" name="user_role" onchange="changeRole(this, {{ user.user.id }})">
@@ -94,7 +94,7 @@
                         {% endif %}
                       </td>
                       <td>
-                        {% if project.owner.id != user.id %}
+                        {% if project.owner.id != user.user.id %}
                         <a class="btn btn-app" data-bs-toggle="modal" data-bs-target="#deleteUser{{ user.user.id }}">
                           <i class="fas fa-trash"></i>
                         </a>

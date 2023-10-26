@@ -17,7 +17,7 @@
     <section class="content">
         <div class="row">
             <div class="col-md-12 page-header">
-                <div class="page-pretitle">{{ project.name }}</div>
+                <div class="page-pretitle">{{ project.name }} ({{ project.owner.username }})</div>
             </div>
         </div>
         <strong>Nouveau fichier</strong>
@@ -32,6 +32,28 @@
         <a class="btn btn-app" onclick="exec();">
             <i class="fas fa-play"></i>
         </a>
+        <a class="btn btn-app" onclick="deleteFile();">
+            <i class="fas fa-trash"></i>
+        </a>
+        {% if role == 3 %}
+        <a class="btn btn-app">
+            <i class="fas fa-eye"></i>
+        </a>
+        {% endif %}
+        {% if role == 1 and users|length > 0 %}
+        <div class="nav-dropdown">
+            <a href="#" class="nav-item nav-link dropdown-toggle text-secondary" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="fas fa-eye"></i>
+            </a>
+            <div class="dropdown-menu nav-link-menu">
+                <ul class="nav-list">
+                    {% for up in users %}
+                    <li><a href="" class="dropdown-item"> {{ up.user.username }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
         <div class="row">
             <div class="card-header p-0 border-bottom-0">
                 <ul class="nav nav-tabs" id="custom-tabs-four-tab" role="tablist">
@@ -89,6 +111,7 @@
         $(document).ready(function() {
             wssh.connect("localhost", "1222", "{{ user.id }}", "{{ user.password }}", "", "", "");
             openTab(file);
+            move();
         });
 
         $(document).on("keydown", function(e){
@@ -117,6 +140,7 @@
         files.pop();
 
         var editors = {}
+        var opened_tabs = [];
 
         var file = "";
         if (files.length > 0) {
@@ -132,7 +156,6 @@
                 indentUnit: 4,
                 matchBrackets: true
             });
-            editor.getDoc().setValue(httpGet("http://localhost:8000/cat?id_project={{ project.id }}&file="+files[i]));
             editors[files[i]] = editor;
         }
 
@@ -164,21 +187,44 @@
             // Show the current tab, and add an "active" class to the button that opened the tab
             document.getElementById(tabId).style.display = "block";
             document.getElementById("tab-"+tabId).className += " active";
+            if (!opened_tabs.includes(file)) {
+                editors[file].getDoc().setValue(httpGet("http://localhost:8000/cat?id_project={{ project.id }}&file="+file));
+                opened_tabs.push(file);
+            }
         }
 
         function exec() {
             wssh.send('python3 /home/{{ user.id }}/{{ project.id }}/'+file);
         }
 
+        function move() {
+            wssh.send('cd /home/{{ user.id }}/{{ project.id }}');
+        }
+
+        function deleteFile() {
+            var tabToDelete = document.getElementById("tab-"+file);
+            tabToDelete.remove();
+            var contentToDelete = document.getElementById(file);
+            contentToDelete.remove();
+            for (var first in editors) {
+                delete editors[first];
+                httpGet("http://localhost:8000/rm?id_project={{ project.id }}&filename="+first);
+                break;
+            }
+            for (var first in editors) {
+                openTab(first);
+                break;
+            }
+        }
+
         function addFile() {
             var add_field = document.getElementById("add-field");
             var file_value = add_field.value;
-            if (file_value != "") {
+            if (file_value != "" && !(file_value in editors)) {
                 add_field.value = "";
                 httpGet("http://localhost:8000/touch?id_project={{ project.id }}&filename="+file_value);
                 document.getElementById("custom-tabs-four-tab").innerHTML += '<li class="nav-item"><a class="nav-link" id="tab-'+file_value+'" onclick="openTab(\''+file_value+'\')">'+file_value+'</a></li>';
                 document.getElementById("custom-tabs-four-tabContent").innerHTML += '<div class="tab-pane" id="'+file_value+'" style="display: block"><textarea id="code-'+file_value+'" name="code-'+file_value+'"></textarea></div>';
-                openTab(file_value);
                 var editor = CodeMirror.fromTextArea(document.getElementById("code-"+file_value), {
                 mode: {name: "python",
                     version: 3,
@@ -188,6 +234,7 @@
                 matchBrackets: true
             });
                 editors[file_value] = editor;
+                openTab(file_value);
             }
         }
     </script>
