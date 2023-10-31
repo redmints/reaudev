@@ -163,7 +163,7 @@
 
     function changeRole(el, user) {
       console.log(el.value);
-      httpGet("http://localhost:8000/change-user/?action=change&id_user="+user+"&id_project={{ project.id }}&role="+el.value)
+      httpGet("{{ reau_url }}/change-user/?action=change&id_user="+user+"&id_project={{ project.id }}&role="+el.value)
     }
   </script>
           <!-- /.card -->

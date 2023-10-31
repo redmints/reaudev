@@ -122,3 +122,7 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+DOCKER_CONTAINER = '0581dd23c4f3'
+
+REAUDEV_URL = 'http://localhost:8000'

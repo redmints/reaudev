@@ -132,7 +132,7 @@
                 if(e.ctrlKey && e.keyCode == 83){
                     e.preventDefault();
                     console.log(editors[file].getValue())
-                    fetch("http://localhost:8000/writefile/", {
+                    fetch("{{ reau_url }}/writefile/", {
                         method: "POST",
                         body: JSON.stringify({
                             id_project: {{ project.id }},
@@ -155,9 +155,9 @@
       
     <script>
         {% if user_to_see != None %}
-        var files = httpGet("http://localhost:8000/ls?id_user={{ user_to_see.id }}&id_project={{ project.id }}");
+        var files = httpGet("{{ reau_url }}/ls?id_user={{ user_to_see.id }}&id_project={{ project.id }}");
         {% else %}
-        var files = httpGet("http://localhost:8000/ls?id_project={{ project.id }}");
+        var files = httpGet("{{ reau_url }}/ls?id_project={{ project.id }}");
         {% endif %}
         files = files.split('\n');
         files.pop();
@@ -213,9 +213,9 @@
             document.getElementById("tab-"+tabId).className += " active";
             if (!opened_tabs.includes(file)) {
                 {% if user_to_see != None %}
-                editors[file].getDoc().setValue(httpGet("http://localhost:8000/cat?id_user={{ user_to_see.id }}&id_project={{ project.id }}&file="+file));
+                editors[file].getDoc().setValue(httpGet("{{ reau_url }}/cat?id_user={{ user_to_see.id }}&id_project={{ project.id }}&file="+file));
                 {% else %}
-                editors[file].getDoc().setValue(httpGet("http://localhost:8000/cat?id_project={{ project.id }}&file="+file));
+                editors[file].getDoc().setValue(httpGet("{{ reau_url }}/cat?id_project={{ project.id }}&file="+file));
                 {% endif %}
                 opened_tabs.push(file);
             }
@@ -246,10 +246,10 @@
                 delete editors[first];
                 {% if user_to_see != None %}
                 {% if role == 1 or role == 4 %}
-                httpGet("http://localhost:8000/rm?id_user={{ user_to_see.id }}&id_project={{ project.id }}&filename="+first);
+                httpGet("{{ reau_url }}/rm?id_user={{ user_to_see.id }}&id_project={{ project.id }}&filename="+first);
                 {% endif %}
                 {% else %}
-                httpGet("http://localhost:8000/rm?id_project={{ project.id }}&filename="+first);
+                httpGet("{{ reau_url }}/rm?id_project={{ project.id }}&filename="+first);
                 {% endif %}
                 break;
             }
@@ -266,10 +266,10 @@
                 add_field.value = "";
                 {% if user_to_see != None %}
                 {% if role == 1 or role == 4 %}
-                httpGet("http://localhost:8000/touch?id_user={{ user_to_see.id }}&id_project={{ project.id }}&filename="+file_value);
+                httpGet("{{ reau_url }}/touch?id_user={{ user_to_see.id }}&id_project={{ project.id }}&filename="+file_value);
                 {% endif %}
                 {% else %}
-                httpGet("http://localhost:8000/touch?id_project={{ project.id }}&filename="+file_value);
+                httpGet("{{ reau_url }}/touch?id_project={{ project.id }}&filename="+file_value);
                 {% endif %}
                 document.getElementById("custom-tabs-four-tab").innerHTML += '<li class="nav-item"><a class="nav-link" id="tab-'+file_value+'" onclick="openTab(\''+file_value+'\')">'+file_value+'</a></li>';
                 document.getElementById("custom-tabs-four-tabContent").innerHTML += '<div class="tab-pane" id="'+file_value+'" style="display: block"><textarea id="code-'+file_value+'" name="code-'+file_value+'"></textarea></div>';

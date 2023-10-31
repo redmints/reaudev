@@ -5,6 +5,7 @@ from ide.models import User
 from ide.models import Project
 from ide.models import User_Project
 from ide.utils import *
+from django.conf import settings
 import base64
 import hashlib
 import json
@@ -101,7 +102,7 @@ def project_settings(request):
                         up.save()
                         docker_create_project(up.user.id, project.id)
             users = User_Project.objects.filter(project=project)
-            return render(request, 'ide/project-settings.html', {'user': user, 'project': project, 'users': users})
+            return render(request, 'ide/project-settings.html', {'user': user, 'project': project, 'users': users, 'reau_url': settings.REAUDEV_URL})
     return redirect("/login")
 
 def change_user(request):
@@ -133,7 +134,7 @@ def editor(request):
                 files = str(docker_ls('/home/'+str(user_to_see.id)+'/'+str(project.id))[1], "utf-8").split('\n')
             user.password_b64 = str(base64.b64encode(user.password.encode('ascii')), "utf-8")
             files.pop(len(files)-1)
-            return render(request, 'ide/editor.html', {'user': user, 'project': project, 'files': files, 'role': user._get_role(project), 'users': up, 'user_to_see': user_to_see})
+            return render(request, 'ide/editor.html', {'user': user, 'project': project, 'files': files, 'role': user._get_role(project), 'users': up, 'user_to_see': user_to_see, 'reau_url': settings.REAUDEV_URL})
     return redirect("/login")
     
 def create_project(request):
