@@ -504,7 +504,7 @@ jQuery(function($){
     };
 
     wssh.custom_font = function() {
-      update_font_family(term);
+      //update_font_family(term);
     };
 
     wssh.default_font = function() {
@@ -528,7 +528,7 @@ jQuery(function($){
     sock.onopen = function() {
       term.open(terminal);
       toggle_fullscreen(term);
-      update_font_family(term);
+      //update_font_family(term);
       term.focus();
       state = CONNECTED;
       if (url_opts_data.command) {
