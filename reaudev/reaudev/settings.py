@@ -126,3 +126,5 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 DOCKER_CONTAINER = '0581dd23c4f3'
 
 REAUDEV_URL = 'http://localhost:8000'
+
+SHARED_DIRECTORY = '/tmp/reaudev/'

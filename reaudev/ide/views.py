@@ -35,10 +35,10 @@ def cat(request):
 def rm(request):
     user = User.objects.filter(id=request.session.get('id_user'))[0]
     project = Project.objects.filter(id=request.GET['id_project'])[0]
-    cmd = '/tmp/reaudev/'+str(request.session.get('id_user'))+'/'+str(request.GET['id_project'])+'/'+str(request.GET['filename'])
+    cmd = settings.SHARED_DIRECTORY+str(request.session.get('id_user'))+'/'+str(request.GET['id_project'])+'/'+str(request.GET['filename'])
     if "id_user" in request.GET:
         if user._get_role(project) == 1:
-            cmd = '/tmp/reaudev/'+str(request.GET['id_user'])+'/'+str(request.GET['id_project'])+'/'+str(request.GET['filename'])
+            cmd = settings.SHARED_DIRECTORY+str(request.GET['id_user'])+'/'+str(request.GET['id_project'])+'/'+str(request.GET['filename'])
     os.remove(cmd)
     return HttpResponse("OK")
 
@@ -55,10 +55,10 @@ def ls(request):
 def touch(request):
     user = User.objects.filter(id=request.session.get('id_user'))[0]
     project = Project.objects.filter(id=request.GET['id_project'])[0]
-    cmd = '/tmp/reaudev/'+str(request.session.get('id_user'))+'/'+str(request.GET['id_project'])+'/'+str(request.GET['filename'])
+    cmd = settings.SHARED_DIRECTORY+str(request.session.get('id_user'))+'/'+str(request.GET['id_project'])+'/'+str(request.GET['filename'])
     if "id_user" in request.GET:
         if user._get_role(project) == 1:
-            cmd = '/tmp/reaudev/'+str(request.GET['id_user'])+'/'+str(request.GET['id_project'])+'/'+str(request.GET['filename'])
+            cmd = settings.SHARED_DIRECTORY+str(request.GET['id_user'])+'/'+str(request.GET['id_project'])+'/'+str(request.GET['filename'])
     docker_touch(cmd)
     return HttpResponse("OK")
 
@@ -67,10 +67,10 @@ def write_file(request):
         json_data = json.loads(request.body)
         user = User.objects.filter(id=request.session.get('id_user'))[0]
         project = Project.objects.filter(id=json_data['id_project'])[0]
-        cmd = '/tmp/reaudev/'+str(request.session.get('id_user'))+'/'+str(json_data['id_project'])+'/'+str(json_data['filename'])
+        cmd = settings.SHARED_DIRECTORY+str(request.session.get('id_user'))+'/'+str(json_data['id_project'])+'/'+str(json_data['filename'])
         if "id_user" in json_data:
             if user._get_role(project) == 1:
-                cmd = '/tmp/reaudev/'+str(json_data['id_user'])+'/'+str(json_data['id_project'])+'/'+str(json_data['filename'])
+                cmd = settings.SHARED_DIRECTORY+str(json_data['id_user'])+'/'+str(json_data['id_project'])+'/'+str(json_data['filename'])
         docker_write_file(cmd, json_data['content'])
     return HttpResponse("OK")
 
@@ -112,7 +112,7 @@ def change_user(request):
                 User_Project.objects.filter(user__id=request.GET["id_user"], project__id=request.GET["id_project"]).update(role=request.GET['role'])
             if request.GET['action'] == "delete":
                 User_Project.objects.filter(user__id=request.GET["id_user"], project__id=request.GET["id_project"]).delete()
-                shutil.rmtree("/tmp/reaudev/"+str(request.GET["id_user"])+"/"+str(request.GET["id_project"]))
+                shutil.rmtree(settings.SHARED_DIRECTORY+str(request.GET["id_user"])+"/"+str(request.GET["id_project"]))
                 return redirect("/project-settings/?id="+request.GET["id_project"])
     return HttpResponse("OK")
     
@@ -157,7 +157,7 @@ def delete_project(request):
         user = User.objects.filter(id=request.session.get('id_user'))[0]
         project = Project.objects.filter(id=request.GET['id_project'])[0]
         if user._get_role(project) == 1:
-            shutil.rmtree("/tmp/reaudev/"+str(user.id)+"/"+str(project.id))
+            shutil.rmtree(settings.SHARED_DIRECTORY+str(user.id)+"/"+str(project.id))
             project.delete()
         return redirect("/")
 
