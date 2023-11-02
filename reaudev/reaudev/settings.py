@@ -127,4 +127,8 @@ DOCKER_CONTAINER = '0581dd23c4f3'
 
 REAUDEV_URL = 'http://localhost:8000'
 
+DOCKER_HOST = 'localhost'
+
+DOCKER_PORT = '1222'
+
 SHARED_DIRECTORY = '/tmp/reaudev/'

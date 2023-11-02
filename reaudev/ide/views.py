@@ -134,7 +134,7 @@ def editor(request):
                 files = str(docker_ls('/home/'+str(user_to_see.id)+'/'+str(project.id))[1], "utf-8").split('\n')
             user.password_b64 = str(base64.b64encode(user.password.encode('ascii')), "utf-8")
             files.pop(len(files)-1)
-            return render(request, 'ide/editor.html', {'user': user, 'project': project, 'files': files, 'role': user._get_role(project), 'users': up, 'user_to_see': user_to_see, 'reau_url': settings.REAUDEV_URL})
+            return render(request, 'ide/editor.html', {'user': user, 'project': project, 'files': files, 'role': user._get_role(project), 'users': up, 'user_to_see': user_to_see, 'reau_url': settings.REAUDEV_URL, 'docker_host': settings.DOCKER_HOST, 'docker_port': settings.DOCKER_PORT})
     return redirect("/login")
     
 def create_project(request):
