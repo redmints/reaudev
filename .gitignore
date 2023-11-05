@@ -3,3 +3,4 @@ reaudev/db.sqlite3
 reaudev/reaudev/__pycache__/
 reaudev/ide/__pycache__/
 reaudev/ide/migrations/__pycache__/
+reaudev/ide/management/commands/__pycache__/

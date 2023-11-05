@@ -31,6 +31,7 @@ urlpatterns = [
     path('writefile/', views.write_file),
     path('project-settings/', views.project_settings),
     path('search-user/', views.search_user),
+    path('search-group/', views.search_group),
     path('change-user/', views.change_user),
     path('rm/', views.rm),
     path('delete-project/', views.delete_project),

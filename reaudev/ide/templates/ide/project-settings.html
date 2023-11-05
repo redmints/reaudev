@@ -67,6 +67,29 @@
                   <button type="submit" class="btn btn-primary">Ajouter</button>
                 </div>
               </form>
+              <form action="" method="POST">
+                {% csrf_token %}
+                {{ form }}
+                <div class="card-body">
+                  <div class="form-group">
+                    <label for="user_id">Ajouter un groupe</label>
+                    <select class="form-control" id="group_id" name="group_id" required>
+                      <option selected="selected"></option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="user_role">Rôle</label>
+                    <select class="form-control" id="user_role" name="user_role">
+                      <option selected="selected" value="2">Apprenant - Sans lecture</option>
+                      <option value="3">Apprenant - Avec lecture</option>
+                      <option value="4">Collaborateur</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="card-footer">
+                  <button type="submit" class="btn btn-primary">Ajouter</button>
+                </div>
+              </form>
               <div class="card-body p-0">
                 <table class="table">
                   <thead>
@@ -143,6 +166,22 @@
         placeholder: 'Utilisateur',
         ajax: {
           url: "/search-user?id_project={{ project.id }}",
+          dataType: "json",
+          processResults: function (data) {
+            return {
+              results: data
+            };
+          }
+        }
+      });
+    });
+    $(function () {
+      $("#group_id").select2({
+        language: "fr",
+        allowClear: true,
+        placeholder: 'Groupe',
+        ajax: {
+          url: "/search-group",
           dataType: "json",
           processResults: function (data) {
             return {

@@ -30,3 +30,10 @@ class User_Project(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
     project = models.ForeignKey(Project, on_delete=models.CASCADE, default=1)
     role = models.fields.IntegerField()
+
+class Group(models.Model):
+    name = models.fields.CharField(max_length=100)
+
+class User_Group(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, default=1)

@@ -4,6 +4,8 @@ from django.shortcuts import HttpResponse
 from ide.models import User
 from ide.models import Project
 from ide.models import User_Project
+from ide.models import Group
+from ide.models import User_Group
 from ide.utils import *
 from django.conf import settings
 import base64
@@ -87,13 +89,25 @@ def search_user(request):
         return HttpResponse(json.dumps(tab))
     return HttpResponse("OK")
 
+def search_group(request):
+    if 'q' in request.GET and len(request.GET['q']) >= 2:
+        groups = Group.objects.filter(name__icontains=request.GET['q'])
+        tab = []
+        for group in groups:
+            dict = {}
+            dict['id'] = group.id
+            dict['text'] = group.name
+            tab.append(dict)
+        return HttpResponse(json.dumps(tab))
+    return HttpResponse("OK")
+
 def project_settings(request):
     if request.session.get('id_user'):
         user = User.objects.filter(id=request.session.get('id_user'))[0]
         project = Project.objects.filter(id=request.GET['id'])[0]
         if user._get_role(project) == 1:
             if request.method == "POST":
-                if request.POST['user_id']:
+                if 'user_id' in request.POST:
                     if not User_Project.objects.filter(user__id=request.POST['user_id'], project__id=request.GET['id']):
                         up = User_Project()
                         up.project = project
@@ -101,6 +115,18 @@ def project_settings(request):
                         up.role = request.POST['user_role']
                         up.save()
                         docker_create_project(up.user.id, project.id)
+                elif 'group_id' in request.POST:
+                    print(request.POST['group_id'])
+                    ugs = User_Group.objects.filter(group__id=request.POST['group_id'])
+                    for ug in ugs:
+                        print(ug.user.username)
+                        if not User_Project.objects.filter(user__id=ug.user.id, project__id=request.GET['id']):
+                            up = User_Project()
+                            up.project = project
+                            up.user = ug.user
+                            up.role = request.POST['user_role']
+                            up.save()
+                            docker_create_project(up.user.id, project.id)
             users = User_Project.objects.filter(project=project)
             return render(request, 'ide/project-settings.html', {'user': user, 'project': project, 'users': users, 'reau_url': settings.REAUDEV_URL})
     return redirect("/login")
