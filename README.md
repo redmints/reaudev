@@ -39,6 +39,7 @@ Modifier dans le fichier settings.py les variables :
 - ```SHARED_DIRECTORY ``` : Le chemin d'accès à votre répertoire pour les données utilisateurs (dans mon cas /tmp/reaudev)
 
 Lancer le serveur : ```python3 manage.py runserver ```
+
 Lancer Web SSH : ```wssh --origin="primary" --xsrf=False --port=8080 ```
 
 ## Support
